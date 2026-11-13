@@ -43,7 +43,6 @@ function Shot($name) {
     $y = [Math]::Max(0, [Math]::Min($b.Height - $h, $script:cy - 110))
     $crop = $full.Clone((New-Object System.Drawing.Rectangle $x, $y, $w, $h), $full.PixelFormat)
     $crop.Save((Join-Path $out "$name.png"), [System.Drawing.Imaging.ImageFormat]::Png)
-    $full.Save((Join-Path $env:TEMP "full-$name.png"), [System.Drawing.Imaging.ImageFormat]::Png)
     $crop.Dispose(); $full.Dispose()
 }
 function Click { [In]::Mouse(2, 0); Start-Sleep -Milliseconds 40; [In]::Mouse(4, 0) }
