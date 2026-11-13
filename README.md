@@ -53,3 +53,12 @@
 - `SetWindowsHookEx` の `WH_MOUSE_LL` / `WH_KEYBOARD_LL`（ユーザーモードの低レベルフック）で操作を検知
 - クリックを透過する最前面のレイヤードウィンドウ（`WS_EX_LAYERED | WS_EX_TRANSPARENT`）に吹き出しを描画
 - ソースは `src/CursorBubble.cs` の 1 ファイルです
+
+## ダウンロード
+
+ビルド済みの `CursorBubble.exe` は [Releases](https://github.com/e-donkun/cursor-bubble/releases) からダウンロードできます。
+署名のない exe のため、初回起動時に「Windows によって PC が保護されました」と表示された場合は、「詳細情報」→「実行」を選んでください。
+
+## ライセンス
+
+[MIT License](LICENSE)
