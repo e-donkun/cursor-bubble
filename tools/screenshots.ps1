@@ -30,7 +30,14 @@ $out = Join-Path $root 'docs'
 New-Item -ItemType Directory -Force $out | Out-Null
 $script:cx = 0; $script:cy = 0
 
-function MoveTo($x, $y) { $script:cx = $x; $script:cy = $y; [In]::SetCursorPos($x, $y) | Out-Null; Start-Sleep -Milliseconds 60 }
+# Move with real (injected) mouse input so that low-level hooks see the movement
+function MoveTo($x, $y) {
+    $script:cx = $x; $script:cy = $y
+    $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+    $ax = [int][Math]::Round($x * 65535 / ($b.Width - 1)); $ay = [int][Math]::Round($y * 65535 / ($b.Height - 1))
+    [In]::mouse_event(0x8001, $ax, $ay, 0, [UIntPtr]::Zero)
+    Start-Sleep -Milliseconds 60
+}
 function Shot($name) {
     $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
     $full = New-Object System.Drawing.Bitmap $b.Width, $b.Height
@@ -66,9 +73,9 @@ $app = Start-Process (Join-Path $root 'CursorBubble.exe') -PassThru
 Start-Sleep -Seconds 4
 
 # 1. left click
-MoveTo 260 220; Click; Start-Sleep -Milliseconds 220; Shot 'click'; Settle
+MoveTo 260 220; Click; Start-Sleep -Milliseconds 130; Shot 'click'; Settle
 # 2. double click
-MoveTo 330 262; Click; Start-Sleep -Milliseconds 90; Click; Start-Sleep -Milliseconds 220; Shot 'double-click'; Settle
+MoveTo 330 262; Click; Start-Sleep -Milliseconds 90; Click; Start-Sleep -Milliseconds 130; Shot 'double-click'; Settle
 # 3. drag (select text)
 MoveTo 150 300; [In]::Mouse(2, 0)
 foreach ($i in 1..12) { MoveTo (150 + $i * 25) (300 + $i * 4) }
@@ -84,7 +91,7 @@ foreach ($i in 1..3) { [In]::Key(0x28, $true); [In]::Key(0x28, $false); Start-Sl
 Start-Sleep -Milliseconds 150; Shot 'key'; Settle
 # 7. right click
 MoveTo 300 240; [In]::Mouse(8, 0); Start-Sleep -Milliseconds 40; [In]::Mouse(0x10, 0)
-Start-Sleep -Milliseconds 300; Shot 'right-click'
+Start-Sleep -Milliseconds 350; Shot 'right-click'
 [In]::Key(0x1B, $true); [In]::Key(0x1B, $false)
 
 Start-Sleep -Seconds 1

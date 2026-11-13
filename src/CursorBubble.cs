@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 [assembly: AssemblyTitle("CursorBubble")]
 [assembly: AssemblyDescription("マウス・キーボード操作をカーソル横に表示する授業用ツール")]
-[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.1.0")]
 
 namespace CursorBubble
 {
@@ -41,7 +41,7 @@ namespace CursorBubble
         public const int WS_EX_TOPMOST = 0x00000008, WS_EX_TRANSPARENT = 0x00000020, WS_EX_TOOLWINDOW = 0x00000080;
         public const int WS_EX_LAYERED = 0x00080000, WS_EX_NOACTIVATE = 0x08000000;
 
-        public const uint SWP_NOSIZE = 0x0001, SWP_NOZORDER = 0x0004, SWP_NOACTIVATE = 0x0010, SWP_SHOWWINDOW = 0x0040;
+        public const uint SWP_NOSIZE = 0x0001, SWP_NOMOVE = 0x0002, SWP_NOZORDER = 0x0004, SWP_NOACTIVATE = 0x0010, SWP_SHOWWINDOW = 0x0040;
         public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
         public const int SW_HIDE = 0;
         public const int ULW_ALPHA = 2;
@@ -256,6 +256,13 @@ namespace CursorBubble
                 Native.SWP_NOSIZE | Native.SWP_NOACTIVATE | Native.SWP_NOZORDER);
         }
 
+        // 後から開いたメニューなどの下に隠れないよう、最前面に出し直す
+        public void Raise()
+        {
+            Native.SetWindowPos(Handle, Native.HWND_TOPMOST, 0, 0, 0, 0,
+                Native.SWP_NOSIZE | Native.SWP_NOMOVE | Native.SWP_NOACTIVATE);
+        }
+
         public void Hide()
         {
             Native.ShowWindow(Handle, Native.SW_HIDE);
@@ -312,7 +319,8 @@ namespace CursorBubble
 
         // 吹き出しの状態
         bool bubbleVisible, bubbleFading;
-        long bubbleExpire;
+        bool bubbleAbove;    // カーソルの上側に出すか（右クリックメニューと重ならないように）
+        long bubbleExpire, lastRaise;
         Hold bubbleHold = Hold.None;
         string countLabel;   // 同じキーの連打を「×n」で数えるための直前ラベル
         int count;
@@ -800,6 +808,7 @@ namespace CursorBubble
             bubbleVisible = true;
             bubbleFading = false;
             bubbleHold = hold;
+            bubbleAbove = kind == Kind.Right;
             bubbleExpire = clock.ElapsedMilliseconds + LingerMs;
             countLabel = null;
             PlaceBubble(true);
@@ -814,8 +823,10 @@ namespace CursorBubble
             Rectangle area = Screen.FromPoint(cursor).Bounds;
 
             int x = cursor.X + ox, y = cursor.Y + oy;
+            int yAbove = cursor.Y - oy / 2 - sz.Height;
             if (x + sz.Width > area.Right) x = cursor.X - ox - sz.Width;   // 右端では左側に出す
-            if (y + sz.Height > area.Bottom) y = cursor.Y - oy - sz.Height; // 下端では上側に出す
+            if (y + sz.Height > area.Bottom) y = yAbove;                    // 下端では上側に出す
+            else if (bubbleAbove && yAbove >= area.Top) y = yAbove;
             if (x < area.Left) x = area.Left;
             if (y < area.Top) y = area.Top;
 
@@ -947,6 +958,8 @@ namespace CursorBubble
                     // ドラッグ中、または Ctrl / Alt / Win を押している間は表示を続ける
                     bool held = (bubbleHold == Hold.Drag && dragging) || (bubbleHold == Hold.Keys && CmdModDown());
                     if (held && bubbleExpire < now + 400) bubbleExpire = now + 400;
+
+                    if (now - lastRaise > 120) { bubble.Raise(); lastRaise = now; }
 
                     if (now <= bubbleExpire)
                     {
