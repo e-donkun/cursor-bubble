@@ -7,17 +7,17 @@ set "CSC=%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 if not exist "%CSC%" set "CSC=%WINDIR%\Microsoft.NET\Framework\v4.0.30319\csc.exe"
 if not exist "%CSC%" (
   echo [ERROR] csc.exe was not found. .NET Framework 4.x is required.
-  pause
+  if not defined CI pause
   exit /b 1
 )
 
-"%CSC%" /nologo /codepage:65001 /target:winexe /optimize+ /out:CursorBubble.exe ^
+"%CSC%" /nologo /codepage:65001 /target:winexe /optimize+ /out:CursorBubble.exe /win32icon:assets\CursorBubble.ico ^
   /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll src\CursorBubble.cs
 if errorlevel 1 (
   echo [ERROR] Build failed.
-  pause
+  if not defined CI pause
   exit /b 1
 )
 
 echo [OK] CursorBubble.exe was created.
-pause
+if not defined CI pause

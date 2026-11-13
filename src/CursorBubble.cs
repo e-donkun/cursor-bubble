@@ -435,6 +435,14 @@ namespace CursorBubble
 
         static Icon MakeIcon()
         {
+            // exe に埋め込んだアイコンがあればそれを使う
+            try
+            {
+                using (Icon exe = Icon.ExtractAssociatedIcon(Application.ExecutablePath))
+                    if (exe != null) return new Icon(exe, SystemInformation.SmallIconSize);
+            }
+            catch { }
+
             using (Bitmap bmp = new Bitmap(32, 32))
             {
                 using (Graphics g = Graphics.FromImage(bmp))
