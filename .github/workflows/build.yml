@@ -5,6 +5,11 @@ on:
     branches: ['**']
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'リリースするバージョン（例: v1.0.0）。空欄ならビルドのみ'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -25,10 +30,12 @@ jobs:
           path: CursorBubble.exe
           if-no-files-found: error
 
-      # v1.0.0 のようなタグを push すると、exe を添付したリリースを作成する
+      # v1.0.0 のようなタグを push するか、手動実行で version を指定すると、
+      # exe を添付したリリースを作成する
       - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.version != ''
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$env:GITHUB_REF_NAME" CursorBubble.exe --title "CursorBubble $env:GITHUB_REF_NAME" --generate-notes
+          VERSION: ${{ inputs.version || github.ref_name }}
+        run: gh release create "$env:VERSION" CursorBubble.exe --target "$env:GITHUB_SHA" --title "CursorBubble $env:VERSION" --generate-notes
